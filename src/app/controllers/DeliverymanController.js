@@ -1,9 +1,18 @@
 import * as Yup from 'yup';
 import Deliveryman from '../models/Deliveryman';
+import File from '../models/File';
 
 class DeliverymanController {
   async index(req, res) {
-    const deliverymen = await Deliveryman.findAll();
+    const deliverymen = await Deliveryman.findAll({
+      include: [
+        {
+          model: File,
+          as: 'avatar',
+          attributes: ['id', 'path', 'url'],
+        },
+      ],
+    });
 
     if (!deliverymen) {
       return res
@@ -54,7 +63,7 @@ class DeliverymanController {
 
     const { id } = req.params;
 
-    const deliveryman = await Deliveryman.findByPk(id);
+    let deliveryman = await Deliveryman.findByPk(id);
 
     if (!deliveryman) {
       return res.status(400).json({ error: 'Deliveryman not found.' });
@@ -70,9 +79,19 @@ class DeliverymanController {
       }
     }
 
-    const updatedDeliveryman = await deliveryman.update(req.body);
+    await deliveryman.update(req.body);
 
-    return res.json(updatedDeliveryman);
+    deliveryman = await Deliveryman.findByPk(id, {
+      include: [
+        {
+          model: File,
+          as: 'avatar',
+          attributes: ['id', 'path', 'url'],
+        },
+      ],
+    });
+
+    return res.json(deliveryman);
   }
 
   async delete(req, res) {
@@ -83,8 +102,8 @@ class DeliverymanController {
       return res.status(400).json({ error: 'Deliveryman not found' });
     }
 
-    const deletedRegistration = await deliveryman.destroy();
-    if (deletedRegistration === 0) {
+    const deletedDeliveryman = await deliveryman.destroy();
+    if (deletedDeliveryman === 0) {
       return res.status(400).json({ error: 'Error during delete operation' });
     }
 
